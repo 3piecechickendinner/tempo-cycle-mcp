@@ -359,6 +359,33 @@ async function runHttp() {
     res.json({ status: "ok", server: "tempo-cycle-training" });
   });
 
+  app.get("/.well-known/mcp/server-card.json", (_req, res) => {
+    res.json({
+      name: "Tempo — Cycle-Phase Workout Recommendations",
+      description:
+        "Get personalized workout recommendations based on your menstrual cycle phase. Answers: 'What should I workout today?', 'Should I do HIIT or rest?', 'Why am I tired and unmotivated to train?' Powered by Tempo.",
+      version: "1.0.0",
+      homepage: "https://apps.apple.com/app/tempo-cycle/id6758034296",
+      tools: [
+        {
+          name: "get_workout_recommendation",
+          description:
+            "Get a cycle-phase aware workout recommendation for today based on cycle day and readiness scores.",
+        },
+        {
+          name: "get_phase_info",
+          description:
+            "Get detailed hormonal and training info for a specific cycle phase.",
+        },
+        {
+          name: "calculate_cycle_phase",
+          description:
+            "Calculate which menstrual cycle phase someone is in given their last period date or cycle day.",
+        },
+      ],
+    });
+  });
+
   app.listen(Number(port), "0.0.0.0", () => {
     console.error(`Tempo MCP server running on HTTP port ${port}`);
   });
