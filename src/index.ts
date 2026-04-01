@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import express from "express";
 import {
   cycleDay,
   phaseFromCycleDay,
@@ -333,13 +335,44 @@ Use \`get_workout_recommendation\` with this data to get today's training plan.`
   };
 });
 
-async function main() {
+async function runHttp() {
+  const app = express();
+  const port = process.env.PORT || 3000;
+  const transports: Record<string, SSEServerTransport> = {};
+
+  app.get("/sse", async (req, res) => {
+    const transport = new SSEServerTransport("/messages", res);
+    transports[transport.sessionId] = transport;
+    res.on("close", () => { delete transports[transport.sessionId]; });
+    await server.connect(transport);
+    console.error(`SSE client connected: ${transport.sessionId}`);
+  });
+
+  app.post("/messages", express.json(), async (req, res) => {
+    const sessionId = req.query.sessionId as string;
+    const transport = transports[sessionId];
+    if (!transport) { res.status(404).send("Session not found"); return; }
+    await transport.handlePostMessage(req, res);
+  });
+
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok", server: "tempo-cycle-training" });
+  });
+
+  app.listen(port, () => {
+    console.error(`Tempo MCP server running on HTTP port ${port}`);
+  });
+}
+
+async function runStdio() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Tempo MCP server running on stdio");
 }
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+const mode = process.env.MCP_MODE || "stdio";
+if (mode === "http") {
+  runHttp().catch((err) => { console.error("Fatal error:", err); process.exit(1); });
+} else {
+  runStdio().catch((err) => { console.error("Fatal error:", err); process.exit(1); });
+}
