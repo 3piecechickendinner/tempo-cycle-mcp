@@ -359,7 +359,7 @@ async function runHttp() {
     res.json({ status: "ok", server: "tempo-cycle-training" });
   });
 
-  app.listen(port, () => {
+  app.listen(Number(port), "0.0.0.0", () => {
     console.error(`Tempo MCP server running on HTTP port ${port}`);
   });
 }
