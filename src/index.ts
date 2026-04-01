@@ -370,7 +370,7 @@ async function runStdio() {
   console.error("Tempo MCP server running on stdio");
 }
 
-const mode = process.env.MCP_MODE || "stdio";
+const mode = process.env.MCP_MODE || (process.env.PORT ? "http" : "stdio");
 if (mode === "http") {
   runHttp().catch((err) => { console.error("Fatal error:", err); process.exit(1); });
 } else {
