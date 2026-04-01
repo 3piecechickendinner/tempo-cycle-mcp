@@ -1,0 +1,34 @@
+{
+  "name": "tempo-cycle-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for cycle-phase aware workout recommendations powered by Tempo",
+  "main": "dist/index.js",
+  "bin": {
+    "tempo-cycle-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "fitness",
+    "menstrual-cycle",
+    "workout",
+    "women",
+    "hormones",
+    "training"
+  ],
+  "author": "Tempo",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.0"
+  }
+}

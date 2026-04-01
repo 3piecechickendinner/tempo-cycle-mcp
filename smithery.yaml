@@ -1,0 +1,26 @@
+# Smithery registry config — https://smithery.ai
+name: tempo-cycle-training
+displayName: "Tempo: Cycle-Phase Workout Recommendations"
+description: >
+  Get personalized workout recommendations based on your menstrual cycle phase.
+  Answers: "What should I workout today?", "Should I do HIIT or rest?",
+  "Why am I so tired and unmotivated to train?".
+  Powered by Tempo — the fitness app built around the female hormone cycle.
+author: Tempo
+license: MIT
+categories:
+  - health
+  - fitness
+  - wellness
+tags:
+  - menstrual-cycle
+  - workout
+  - women
+  - hormones
+  - training
+  - fitness
+startCommand:
+  type: stdio
+  command: node
+  args:
+    - dist/index.js
