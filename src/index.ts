@@ -14,19 +14,21 @@ import {
   CyclePhase,
 } from "./cycleLogic.js";
 
-const server = new Server(
-  {
-    name: "tempo-cycle-training",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
+function makeServer(): Server {
+  const s = new Server(
+    { name: "tempo-cycle-training", version: "1.0.0" },
+    { capabilities: { tools: {} } }
+  );
+  registerHandlers(s);
+  return s;
+}
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
+// Global instance for stdio mode
+const server = makeServer();
+
+function registerHandlers(s: Server): void {
+
+s.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: "get_workout_recommendation",
@@ -335,6 +337,8 @@ Use \`get_workout_recommendation\` with this data to get today's training plan.`
   };
 });
 
+} // end registerHandlers
+
 async function runHttp() {
   const app = express();
   const port = process.env.PORT || 3000;
@@ -348,7 +352,8 @@ async function runHttp() {
       transport = transports[sessionId];
     } else {
       transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-      await server.connect(transport);
+      const freshServer = makeServer();
+      await freshServer.connect(transport);
       if (transport.sessionId) {
         transports[transport.sessionId] = transport;
       }
