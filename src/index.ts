@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -338,21 +338,39 @@ Use \`get_workout_recommendation\` with this data to get today's training plan.`
 async function runHttp() {
   const app = express();
   const port = process.env.PORT || 3000;
-  const transports: Record<string, SSEServerTransport> = {};
+  const transports: Record<string, StreamableHTTPServerTransport> = {};
 
-  app.get("/sse", async (req, res) => {
-    const transport = new SSEServerTransport("/messages", res);
-    transports[transport.sessionId] = transport;
-    res.on("close", () => { delete transports[transport.sessionId]; });
-    await server.connect(transport);
-    console.error(`SSE client connected: ${transport.sessionId}`);
+  app.post("/mcp", express.json(), async (req, res) => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+    let transport: StreamableHTTPServerTransport;
+
+    if (sessionId && transports[sessionId]) {
+      transport = transports[sessionId];
+    } else {
+      transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+      await server.connect(transport);
+      if (transport.sessionId) {
+        transports[transport.sessionId] = transport;
+      }
+    }
+    await transport.handleRequest(req, res, req.body);
   });
 
-  app.post("/messages", express.json(), async (req, res) => {
-    const sessionId = req.query.sessionId as string;
-    const transport = transports[sessionId];
-    if (!transport) { res.status(404).send("Session not found"); return; }
-    await transport.handlePostMessage(req, res);
+  app.get("/mcp", async (req, res) => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+    if (!sessionId || !transports[sessionId]) {
+      res.status(400).send("Missing or invalid session ID");
+      return;
+    }
+    await transports[sessionId].handleRequest(req, res);
+  });
+
+  app.delete("/mcp", async (req, res) => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+    if (sessionId && transports[sessionId]) {
+      delete transports[sessionId];
+    }
+    res.status(200).end();
   });
 
   app.get("/health", (_req, res) => {
